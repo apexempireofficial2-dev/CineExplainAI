@@ -1,0 +1,138 @@
+from pathlib import Path
+import os
+import json
+import requests
+from dotenv import load_dotenv
+
+load_dotenv()
+
+ROUTER_URL = "http://127.0.0.1:20128/v1/chat/completions"
+MODEL = "oc/muse-spark-1.2-contributor-free"
+
+
+def improve_movie_script(script_path, output_path, language="Hindi", style="Cinematic"):
+    script_path = Path(script_path)
+    output_path = Path(output_path)
+
+    original_script = script_path.read_text(encoding="utf-8").strip()
+
+    if not original_script:
+        raise RuntimeError("Original script empty hai.")
+
+    api_key = os.getenv("NINE_ROUTER_API_KEY")
+
+    if not api_key:
+        raise RuntimeError("NINE_ROUTER_API_KEY .env mein nahi mila.")
+
+    prompt = f"""
+Tum ek professional YouTube movie-explanation script writer ho.
+
+User ne original movie explanation script provide ki hai.
+Tumhara kaam us script ko samajhkar ek high-quality, engaging,
+natural Hindi/Hinglish movie explanation narration banana hai.
+
+Language: {language}
+Style: {style}
+
+IMPORTANT RULES:
+- Original story ka meaning aur important events preserve karo.
+- Story chronological order mein rakho.
+- Characters aur important events clearly explain karo.
+- Narration natural human storyteller jaisi lage.
+- Robotic/AI language use mat karo.
+- Repeated sentences remove karo.
+- Unnecessary filler remove karo.
+- Suspense aur story flow maintain karo.
+- Dialogue ko narration mein naturally explain karo.
+- Movie explanation YouTube style rakho.
+- Sirf narration script return karo.
+- Scene numbers mat do.
+- Timestamps mat do.
+- Camera directions mat do.
+- [Music], [Sound], [Gunshot] jaise sound-effect labels mat do.
+- Extra explanation ya notes mat do.
+- Script ko unnecessarily short mat karo.
+- Original script ki important information miss mat karo.
+
+ORIGINAL SCRIPT:
+{original_script}
+"""
+
+    response = requests.post(
+        ROUTER_URL,
+        headers={
+            "Authorization": f"Bearer {api_key}",
+            "Content-Type": "application/json",
+        },
+        json={
+            "model": MODEL,
+            "messages": [
+                {
+                    "role": "system",
+                    "content": "You are an expert Hindi movie explanation script writer."
+                },
+                {
+                    "role": "user",
+                    "content": prompt
+                }
+            ],
+            "temperature": 0.7,
+            "stream": True
+        },
+        timeout=600
+    )
+
+    if response.status_code != 200:
+        raise RuntimeError(
+            f"9Router request failed: HTTP {response.status_code}\n"
+            + response.text[-3000:]
+        )
+
+    chunks = []
+
+    for line in response.text.splitlines():
+        line = line.strip()
+
+        if not line.startswith("data:"):
+            continue
+
+        payload = line[5:].strip()
+
+        if payload == "[DONE]":
+            continue
+
+        try:
+            data = json.loads(payload)
+            content = data["choices"][0]["delta"].get("content", "")
+
+            if content:
+                chunks.append(content)
+
+        except (
+            json.JSONDecodeError,
+            KeyError,
+            IndexError,
+            TypeError
+        ):
+            continue
+
+    improved_script = "".join(chunks).strip()
+
+    if not improved_script:
+        raise RuntimeError(
+            "9Router ne empty script return ki.\n"
+            + response.text[-3000:]
+        )
+
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    output_path.write_text(improved_script, encoding="utf-8")
+
+    return output_path
+
+
+# Backward compatibility
+def generate_movie_script(transcript_path, output_path):
+    return improve_movie_script(
+        transcript_path,
+        output_path
+    )

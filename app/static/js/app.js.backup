@@ -1,0 +1,108 @@
+document.addEventListener("DOMContentLoaded", () => {
+
+    const fileInput = document.getElementById("videoFile");
+    const chooseBtn = document.getElementById("chooseVideoBtn");
+    const uploadBtn = document.getElementById("uploadBtn");
+    const selectedFile = document.getElementById("selectedFile");
+    const status = document.getElementById("uploadStatus");
+    const progressBox = document.getElementById("uploadProgress");
+    const progressBar = document.getElementById("progressBar");
+    const progressText = document.getElementById("progressText");
+
+    let selectedVideo = null;
+
+    chooseBtn.addEventListener("click", () => {
+        fileInput.click();
+    });
+
+    fileInput.addEventListener("change", () => {
+
+        selectedVideo = fileInput.files[0];
+
+        if (!selectedVideo) return;
+
+        selectedFile.textContent = "🎬 " + selectedVideo.name;
+        status.textContent = "Video selected. Ready to upload.";
+
+        uploadBtn.disabled = false;
+        uploadBtn.textContent = "⬆️ Upload Video";
+    });
+
+    uploadBtn.addEventListener("click", () => {
+
+        if (!selectedVideo) {
+            status.textContent = "❌ Please choose a video first.";
+            return;
+        }
+
+        const formData = new FormData();
+        formData.append("video", selectedVideo);
+
+        uploadBtn.disabled = true;
+        uploadBtn.textContent = "⏳ Uploading...";
+
+        progressBox.style.display = "block";
+        progressBar.value = 0;
+        progressText.textContent = "Uploading: 0%";
+
+        const xhr = new XMLHttpRequest();
+
+        xhr.open("POST", "/api/upload", true);
+
+        xhr.upload.onprogress = (event) => {
+
+            if (!event.lengthComputable) return;
+
+            const percent =
+                Math.round((event.loaded / event.total) * 100);
+
+            progressBar.value = percent;
+            progressText.textContent =
+                `Uploading: ${percent}%`;
+        };
+
+        xhr.onload = () => {
+
+            try {
+
+                const data = JSON.parse(xhr.responseText);
+
+                if (xhr.status >= 200 &&
+                    xhr.status < 300 &&
+                    data.success) {
+
+                    progressBar.value = 100;
+                    progressText.textContent =
+                        "Upload complete: 100%";
+
+                    status.textContent =
+                        "✅ Video uploaded successfully";
+
+                    uploadBtn.textContent =
+                        "✅ Video Uploaded";
+
+                    console.log("Job ID:", data.job_id);
+
+                } else {
+                    throw new Error(data.error || "Upload failed");
+                }
+
+            } catch (error) {
+
+                status.textContent = "❌ " + error.message;
+                uploadBtn.disabled = false;
+                uploadBtn.textContent = "⬆️ Upload Video";
+            }
+        };
+
+        xhr.onerror = () => {
+
+            status.textContent = "❌ Network error";
+            uploadBtn.disabled = false;
+            uploadBtn.textContent = "⬆️ Upload Video";
+        };
+
+        xhr.send(formData);
+    });
+
+});

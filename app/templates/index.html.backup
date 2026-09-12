@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>CineExplainAI</title>
+
+    <link rel="stylesheet"
+          href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+
+<body>
+
+<div class="background-glow"></div>
+
+<header class="navbar">
+    <div class="logo">
+        <span>✦</span> CineExplainAI
+    </div>
+
+    <nav>
+        <a href="#">Create</a>
+        <a href="#">Projects</a>
+        <a href="#">Settings</a>
+    </nav>
+</header>
+
+
+<main class="container">
+
+    <section class="hero">
+
+        <div class="badge">
+            ✨ AI MOVIE EXPLAINER
+        </div>
+
+        <h1>
+            Turn Movies Into
+            <span>Cinematic Stories</span>
+        </h1>
+
+        <p>
+            Upload a video and let AI create the script,
+            Hindi narration, subtitles and final explained video.
+        </p>
+
+    </section>
+
+
+    <section class="creator-card">
+
+        <div class="upload-box">
+
+            <div class="upload-icon">
+                🎬
+            </div>
+
+            <h2>Drop your video here</h2>
+
+            <p>
+                Upload a movie, explanation video or video file
+            </p>
+
+            <input
+                type="file"
+                id="videoFile"
+                accept="video/*"
+                hidden
+            >
+
+            <button
+                type="button"
+                class="upload-btn"
+                id="chooseVideoBtn">
+                📁 Choose Video
+            </button>
+
+            <button
+                type="button"
+                class="upload-btn"
+                id="uploadBtn"
+                disabled>
+                ⬆️ Upload Video
+            </button>
+
+            <div id="uploadProgress" style="display:none;">
+                <progress id="progressBar" value="0" max="100"></progress>
+                <span id="progressText">Uploading: 0%</span>
+            </div>
+
+            <div id="uploadStatus"></div>
+            <div id="selectedFile"></div>
+
+
+            <div class="or">
+                OR
+            </div>
+
+            <div class="url-input">
+                <input
+                    type="text"
+                    placeholder="Paste YouTube URL..."
+                >
+
+                <button>Add</button>
+            </div>
+
+        </div>
+
+
+        <div class="settings-grid">
+
+            <div class="setting">
+                <label>Language</label>
+                <select>
+                    <option>Hindi 🇮🇳</option>
+                    <option>English 🇺🇸</option>
+                </select>
+            </div>
+
+            <div class="setting">
+                <label>Voice</label>
+                <select>
+                    <option>Hindi Voice 1</option>
+                    <option>Hindi Voice 2</option>
+                </select>
+            </div>
+
+            <div class="setting">
+                <label>Style</label>
+                <select>
+                    <option>Cinematic</option>
+                    <option>Storytelling</option>
+                    <option>Fast Explained</option>
+                </select>
+            </div>
+
+        </div>
+
+
+        <div class="features">
+
+            <label>
+                <input type="checkbox" checked>
+                AI Script
+            </label>
+
+            <label>
+                <input type="checkbox" checked>
+                Scene Matching
+            </label>
+
+            <label>
+                <input type="checkbox" checked>
+                Hindi Voice
+            </label>
+
+            <label>
+                <input type="checkbox" checked>
+                Subtitles
+            </label>
+
+        </div>
+
+
+        <button class="create-btn">
+            ✨ CREATE MOVIE EXPLAINED
+        </button>
+
+    </section>
+
+
+    <section class="pipeline">
+
+        <h2>How CineExplainAI Works</h2>
+
+        <div class="steps">
+
+            <div>
+                <span>01</span>
+                <b>Whisper</b>
+                <p>Audio → Transcript</p>
+            </div>
+
+            <div>
+                <span>02</span>
+                <b>AI Script</b>
+                <p>Transcript → Story</p>
+            </div>
+
+            <div>
+                <span>03</span>
+                <b>Hindi Voice</b>
+                <p>Script → Narration</p>
+            </div>
+
+            <div>
+                <span>04</span>
+                <b>Scene Match</b>
+                <p>Story → Scenes</p>
+            </div>
+
+            <div>
+                <span>05</span>
+                <b>FFmpeg</b>
+                <p>Everything → Video</p>
+            </div>
+
+        </div>
+
+    </section>
+
+</main>
+
+
+<footer>
+    CineExplainAI • AI Movie Explanation Studio
+</footer>
+
+</body>
+</html>
+
+<script src="{{ url_for('static', filename='js/app.js') }}"></script>

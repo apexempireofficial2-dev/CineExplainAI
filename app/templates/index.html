@@ -1,0 +1,384 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>CineExplainAI</title>
+
+    <link rel="stylesheet"
+          href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+
+<body>
+
+<div class="background-glow"></div>
+
+<header class="navbar">
+    <div class="logo">
+        <span>✦</span> CineExplainAI
+    </div>
+
+    <nav>
+        <a href="#">Create</a>
+        <a href="#">Projects</a>
+        <a href="#">Settings</a>
+    </nav>
+</header>
+
+
+<main class="container">
+
+    <section class="hero">
+
+        <div class="badge">
+            ✨ AI MOVIE EXPLAINER
+        </div>
+
+        <h1>
+            Turn Movies Into
+            <span>Cinematic Stories</span>
+        </h1>
+
+        <p>
+            Upload your original script and movie clips.
+            Let AI improve the script, create narration and match scenes.
+        </p>
+
+    </section>
+
+
+    <section class="creator-card">
+
+        <!-- ORIGINAL SCRIPT -->
+
+        <div class="upload-box">
+
+            <div class="upload-icon">
+                📄
+            </div>
+
+            <h2>Upload Original Script</h2>
+
+            <p>
+                Upload your original movie-explanation script (.txt)
+            </p>
+
+            <input
+                type="file"
+                id="scriptFile"
+                accept=".txt,text/plain"
+                hidden
+            >
+
+            <button
+                type="button"
+                class="upload-btn"
+                id="chooseScriptBtn">
+                📄 Choose Script
+            </button>
+
+            <button
+                type="button"
+                class="upload-btn"
+                id="uploadScriptBtn"
+                disabled>
+                ⬆️ Upload Script
+            </button>
+
+            <div id="scriptProgress" style="display:none;">
+                <progress id="scriptProgressBar"
+                          value="0"
+                          max="100"></progress>
+
+                <span id="scriptProgressText">
+                    Uploading: 0%
+                </span>
+            </div>
+
+            <div id="scriptStatus"></div>
+
+            <div id="selectedScript"></div>
+
+        </div>
+
+
+        <!-- MOVIE VIDEO / CLIPS -->
+
+        <div class="upload-box">
+
+            <div class="upload-icon">
+                🎬
+            </div>
+
+            <h2>Upload Movie / Clips</h2>
+
+            <p>
+                Upload the movie or video clips for scene matching
+            </p>
+
+            <input
+                type="file"
+                id="videoFile"
+                accept="video/*"
+                hidden
+            >
+
+            <button
+                type="button"
+                class="upload-btn"
+                id="chooseVideoBtn">
+                📁 Choose Video
+            </button>
+
+            <button
+                type="button"
+                class="upload-btn"
+                id="uploadBtn"
+                disabled>
+                ⬆️ Upload Video
+            </button>
+
+            <div id="uploadProgress" style="display:none;">
+
+                <progress
+                    id="progressBar"
+                    value="0"
+                    max="100">
+                </progress>
+
+                <span id="progressText">
+                    Uploading: 0%
+                </span>
+
+            </div>
+
+            <div id="uploadStatus"></div>
+
+            <div id="selectedFile"></div>
+
+        </div>
+
+
+        <!-- SETTINGS -->
+
+        <div class="settings-grid">
+
+            <div class="setting">
+
+                <label>Language</label>
+
+                <select id="languageSelect">
+
+                    <option value="Hindi">
+                        Hindi 🇮🇳
+                    </option>
+
+                    <option value="English">
+                        English 🇺🇸
+                    </option>
+
+                </select>
+
+            </div>
+
+
+            <div class="setting">
+
+                <label>Style</label>
+
+                <select id="styleSelect">
+
+                    <option value="Cinematic">
+                        Cinematic
+                    </option>
+
+                    <option value="Storytelling">
+                        Storytelling
+                    </option>
+
+                    <option value="Fast Explained">
+                        Fast Explained
+                    </option>
+
+                </select>
+
+            </div>
+
+        </div>
+
+
+        <!-- PIPELINE OPTIONS -->
+
+        <div class="features">
+
+            <label>
+                <input
+                    type="checkbox"
+                    id="aiScript"
+                    checked>
+
+                🤖 9Router AI Script
+            </label>
+
+
+            <label>
+                <input
+                    type="checkbox"
+                    id="sceneMatching"
+                    checked>
+
+                🎬 Scene Matching
+            </label>
+
+
+            <label>
+                <input
+                    type="checkbox"
+                    id="ttsVoice"
+                    checked>
+
+                🔊 TTS Narration
+            </label>
+
+
+            <label>
+                <input
+                    type="checkbox"
+                    id="subtitles"
+                    checked>
+
+                📝 Subtitles
+            </label>
+
+        </div>
+
+
+        <!-- CREATE BUTTON -->
+
+        <button
+            class="create-btn"
+            id="improveScriptBtn"
+            disabled>
+
+            ✨ IMPROVE SCRIPT WITH 9ROUTER
+
+        </button>
+
+
+        <!-- STATUS -->
+
+        <div
+            id="aiStatus"
+            style="margin-top:20px;">
+        </div>
+
+
+        <!-- ORIGINAL SCRIPT PREVIEW -->
+
+        <div
+            id="originalScriptBox"
+            style="display:none; margin-top:25px;">
+
+            <h2>
+                📄 Original Script
+            </h2>
+
+            <textarea
+                id="originalScriptText"
+                rows="12"
+                style="width:100%;"
+                readonly>
+            </textarea>
+
+        </div>
+
+
+        <!-- IMPROVED SCRIPT -->
+
+        <div
+            id="improvedScriptBox"
+            style="display:none; margin-top:25px;">
+
+            <h2>
+                🤖 Improved Movie Explanation Script
+            </h2>
+
+            <textarea
+                id="improvedScriptText"
+                rows="18"
+                style="width:100%;">
+            </textarea>
+
+            <br><br>
+
+            <button
+                type="button"
+                class="upload-btn"
+                id="downloadScriptBtn">
+
+                💾 Download Improved Script
+
+            </button>
+
+        </div>
+
+    </section>
+
+
+    <!-- PIPELINE -->
+
+    <section class="pipeline">
+
+        <h2>
+            CineExplainAI Pipeline
+        </h2>
+
+        <div class="steps">
+
+            <div>
+                <span>01</span>
+                <b>Original Script</b>
+                <p>Upload your script</p>
+            </div>
+
+            <div>
+                <span>02</span>
+                <b>9Router AI</b>
+                <p>Improve the story</p>
+            </div>
+
+            <div>
+                <span>03</span>
+                <b>TTS</b>
+                <p>Script → Narration</p>
+            </div>
+
+            <div>
+                <span>04</span>
+                <b>Scene Match</b>
+                <p>Match narration with clips</p>
+            </div>
+
+            <div>
+                <span>05</span>
+                <b>FFmpeg</b>
+                <p>Final explained video</p>
+            </div>
+
+        </div>
+
+    </section>
+
+</main>
+
+
+<footer>
+    CineExplainAI • AI Movie Explanation Studio
+</footer>
+
+
+<script src="{{ url_for('static', filename='js/app.js') }}"></script>
+
+</body>
+</html>

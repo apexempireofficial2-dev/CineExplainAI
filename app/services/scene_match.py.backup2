@@ -1,0 +1,203 @@
+from pathlib import Path
+import subprocess
+import json
+import re
+
+
+def get_video_duration(video_path):
+    result = subprocess.run(
+        [
+            "ffprobe",
+            "-v", "error",
+            "-show_entries", "format=duration",
+            "-of", "default=noprint_wrappers=1:nokey=1",
+            str(video_path)
+        ],
+        capture_output=True,
+        text=True
+    )
+
+    if result.returncode != 0:
+        raise RuntimeError("Video duration read nahi ho saki.")
+
+    return float(result.stdout.strip())
+
+
+def split_script(script_path):
+    script_path = Path(script_path)
+
+    text = script_path.read_text(
+        encoding="utf-8"
+    ).strip()
+
+    if not text:
+        raise RuntimeError("Improved script empty hai.")
+
+    chunks = re.split(
+        r'(?<=[.!?।])\s+',
+        text
+    )
+
+    return [
+        x.strip()
+        for x in chunks
+        if x.strip()
+    ]
+
+
+def detect_scene_changes(video_path, threshold=0.35):
+    """
+    FFmpeg scene-change detection.
+    Returns timestamps where significant visual scene changes occur.
+    """
+
+    command = [
+        "ffmpeg",
+        "-hide_banner",
+        "-i", str(video_path),
+        "-filter:v",
+        f"select='gt(scene,{threshold})',showinfo",
+        "-an",
+        "-f", "null",
+        "-"
+    ]
+
+    result = subprocess.run(
+        command,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        text=True
+    )
+
+    if result.returncode != 0:
+        raise RuntimeError(
+            "FFmpeg scene detection failed:\n"
+            + result.stderr[-3000:]
+        )
+
+    timestamps = []
+
+    for line in result.stderr.splitlines():
+        if "pts_time:" not in line:
+            continue
+
+        match = re.search(
+            r"pts_time:([0-9.]+)",
+            line
+        )
+
+        if match:
+            timestamps.append(
+                float(match.group(1))
+            )
+
+    return timestamps
+
+
+def create_scene_map(
+    script_path,
+    video_path,
+    output_path,
+    threshold=0.35
+):
+    script_path = Path(script_path)
+    video_path = Path(video_path)
+    output_path = Path(output_path)
+
+    if not script_path.exists():
+        raise RuntimeError("Script file nahi mili.")
+
+    if not video_path.exists():
+        raise RuntimeError("Video file nahi mili.")
+
+    duration = get_video_duration(video_path)
+
+    chunks = split_script(script_path)
+
+    if not chunks:
+        raise RuntimeError("Script chunks nahi mile.")
+
+    print("Video duration:", round(duration, 3))
+    print("Script chunks:", len(chunks))
+    print("Detecting real scene changes...")
+
+    scene_changes = detect_scene_changes(
+        video_path,
+        threshold=threshold
+    )
+
+    scene_changes = sorted(
+        set(
+            x for x in scene_changes
+            if 0 < x < duration
+        )
+    )
+
+    print(
+        "Detected scene changes:",
+        len(scene_changes)
+    )
+
+    boundaries = [0.0] + scene_changes + [duration]
+
+    video_scenes = []
+
+    for i in range(len(boundaries) - 1):
+        start = boundaries[i]
+        end = boundaries[i + 1]
+
+        if end <= start:
+            continue
+
+        video_scenes.append({
+            "video_scene": len(video_scenes) + 1,
+            "start": round(start, 3),
+            "end": round(end, 3),
+            "duration": round(end - start, 3)
+        })
+
+    # Temporary script-to-video mapping.
+    # Real AI semantic matching will be added next.
+    scenes = []
+
+    total_video_scenes = len(video_scenes)
+
+    for index, text in enumerate(chunks):
+
+        if total_video_scenes == 0:
+            start = 0.0
+            end = duration
+        else:
+            video_index = min(
+                index,
+                total_video_scenes - 1
+            )
+
+            selected = video_scenes[video_index]
+
+            start = selected["start"]
+            end = selected["end"]
+
+        scenes.append({
+            "scene": index + 1,
+            "text": text,
+            "start": round(start, 3),
+            "end": round(end, 3),
+            "duration": round(end - start, 3)
+        })
+
+    output_path.parent.mkdir(
+        parents=True,
+        exist_ok=True
+    )
+
+    output_path.write_text(
+        json.dumps(
+            scenes,
+            ensure_ascii=False,
+            indent=2
+        ),
+        encoding="utf-8"
+    )
+
+    return output_path

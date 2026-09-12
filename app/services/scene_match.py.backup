@@ -1,0 +1,100 @@
+from pathlib import Path
+import subprocess
+import json
+import re
+
+
+def get_video_duration(video_path):
+    result = subprocess.run(
+        [
+            "ffprobe",
+            "-v", "error",
+            "-show_entries", "format=duration",
+            "-of", "default=noprint_wrappers=1:nokey=1",
+            str(video_path)
+        ],
+        capture_output=True,
+        text=True
+    )
+
+    if result.returncode != 0:
+        raise RuntimeError("Video duration read nahi ho saki.")
+
+    return float(result.stdout.strip())
+
+
+def split_script(script_path):
+    script_path = Path(script_path)
+
+    text = script_path.read_text(
+        encoding="utf-8"
+    ).strip()
+
+    if not text:
+        raise RuntimeError("Improved script empty hai.")
+
+    # Paragraph/sentence based chunks
+    chunks = re.split(r'(?<=[.!?।])\s+', text)
+
+    chunks = [
+        x.strip()
+        for x in chunks
+        if x.strip()
+    ]
+
+    return chunks
+
+
+def create_scene_map(script_path, video_path, output_path):
+    script_path = Path(script_path)
+    video_path = Path(video_path)
+    output_path = Path(output_path)
+
+    if not script_path.exists():
+        raise RuntimeError("Script file nahi mili.")
+
+    if not video_path.exists():
+        raise RuntimeError("Video file nahi mili.")
+
+    duration = get_video_duration(video_path)
+    chunks = split_script(script_path)
+
+    if not chunks:
+        raise RuntimeError("Script chunks nahi mile.")
+
+    # Temporary basic scene map.
+    # AI-based semantic matching next step mein add karenge.
+    chunk_duration = duration / len(chunks)
+
+    scenes = []
+
+    for index, text in enumerate(chunks):
+        start = index * chunk_duration
+        end = min(
+            (index + 1) * chunk_duration,
+            duration
+        )
+
+        scenes.append({
+            "scene": index + 1,
+            "text": text,
+            "start": round(start, 3),
+            "end": round(end, 3),
+            "duration": round(end - start, 3)
+        })
+
+    output_path.parent.mkdir(
+        parents=True,
+        exist_ok=True
+    )
+
+    output_path.write_text(
+        json.dumps(
+            scenes,
+            ensure_ascii=False,
+            indent=2
+        ),
+        encoding="utf-8"
+    )
+
+    return output_path
